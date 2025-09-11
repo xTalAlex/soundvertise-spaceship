@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", monospace;
+}
