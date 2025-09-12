@@ -1,20 +1,12 @@
 ---
+import Toast from "@components/Toast.astro";
 import astroLogo from "../assets/astro.svg";
-import background from "../assets/background.svg";
 ---
 
 <div
   id="container"
   class="flex flex-col md:block md:flex-none h-full font-sans"
 >
-  <img
-    id="background"
-    class="fixed inset-0 w-full h-full -z-10 blur-2xl"
-    src={background.src}
-    alt=""
-    fetchpriority="high"
-  />
-
   <main class="h-full flex justify-center">
     <section
       id="hero"
@@ -28,22 +20,22 @@ import background from "../assets/background.svg";
           alt="Astro Homepage"
         /></a
       >
+
       <h1 class="my-4 text-xl leading-6">
         To get started, open the <code
-          class="bg-gradient-to-tr from-purple-200 to-purple-100 rounded-lg border border-transparent inline-block py-1.5 px-2"
+          class="bg-accent rounded-lg border border-transparent inline-block py-1.5 px-2"
         >
           <pre
-            class="font-mono font-semibold m-0 text-clip text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-500">src/pages</pre></code
+            class="font-mono font-semibold m-0 text-clip text-transparent bg-clip-text bg-gradient-to-r from-secondary to-primary">src/pages</pre></code
         > directory in your project.
       </h1>
+
       <section id="links" class="flex flex-wrap md:flex-nowrap gap-4">
-        <a
-          class="button shadow-lg shadow-white/10 bg-gradient-to-r from-blue-600 to-purple-500 flex items-center py-3.5 px-5 md:py-2 md:px-3 no-underline transition-colors duration-200 text-white hover:text-white/50 hover:shadow-none rounded-lg"
-          href="https://docs.astro.build">Read our docs</a
+        <a class="btn btn-primary" href="https://docs.astro.build"
+          >Read our docs</a
         >
-        <a
-          class="flex items-center py-1.5 px-3 text-black hover:text-black/50 no-underline transition-colors duration-200"
-          href="https://astro.build/chat"
+
+        <a class="btn btn-ghost" href="https://astro.build/chat"
           >Join our Discord <svg
             class="h-4 ml-2"
             xmlns="http://www.w3.org/2000/svg"
@@ -58,20 +50,5 @@ import background from "../assets/background.svg";
     </section>
   </main>
 
-  <a
-    href="https://astro.build/blog/astro-5/"
-    id="news"
-    class="transition-colors duration-200 absolute left-4 md:left-auto bottom-4 right-4 max-w-full md:max-w-xs p-4 backdrop-blur-2xl bg-white hover:bg-white/50 rounded-2xl shadow"
-  >
-    <svg width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg"
-      ><path
-        d="M24.667 12c1.333 1.414 2 3.192 2 5.334 0 4.62-4.934 5.7-7.334 12C18.444 28.567 18 27.456 18 26c0-4.642 6.667-7.053 6.667-14Zm-5.334-5.333c1.6 1.65 2.4 3.43 2.4 5.333 0 6.602-8.06 7.59-6.4 17.334C13.111 27.787 12 25.564 12 22.666c0-4.434 7.333-8 7.333-16Zm-6-5.333C15.111 3.555 16 5.556 16 7.333c0 8.333-11.333 10.962-5.333 22-3.488-.774-6-4-6-8 0-8.667 8.666-10 8.666-20Z"
-        fill="#111827"></path></svg
-    >
-    <h2 class="font-norma text-black text-xl mb-4">What's New in Astro 5.0?</h2>
-    <p class="text-black/50 text-base leading-6 tracking-tight m-0">
-      From content layers to server islands, click to learn more about the new
-      features and improvements in Astro 5.0
-    </p>
-  </a>
+  <Toast />
 </div>

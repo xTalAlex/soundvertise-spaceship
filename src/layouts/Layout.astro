@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import background from "../assets/background.svg";
 ---
 
 <!doctype html>
@@ -9,9 +10,20 @@ import "../styles/global.css";
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro Basics</title>
+    <title>Soundvertise Spaceship</title>
   </head>
   <body class="m-0 w-screen h-screen">
+    <div
+      class="text-base-content bg-base-100 absolute inset-0 w-full h-full -z-10"
+    >
+      <img
+        id="background"
+        class="w-full h-full blur-2xl"
+        src={background.src}
+        alt=""
+        fetchpriority="high"
+      />
+    </div>
     <slot />
   </body>
 </html>
