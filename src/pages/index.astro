@@ -1,8 +1,63 @@
 ---
-import Welcome from "../components/Welcome.astro";
+import { getSession } from "auth-astro/server";
+
 import Layout from "../layouts/Layout.astro";
+import VersionNews from "@components/VersionNews.astro";
+import Logo from "@components/Logo.astro";
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const isLoggedIn = session?.user ? true : false;
 ---
 
 <Layout>
-  <Welcome />
+  <div id="container" class="grid place-items-center min-h-screen">
+    <main class="h-full flex justify-center">
+      <section
+        id="hero"
+        class="pt-12 md:pt-0 block md:flex md:flex-col md:justify-center md:items-start p-4"
+      >
+        <Logo />
+
+        <h1 class="my-4 text-xl leading-6">
+          Welcome on board! this is Spaceship, the <code
+            class="bg-accent rounded-lg border border-transparent inline-block py-1.5 px-2"
+          >
+            <a
+              href="https://soundvertise.co"
+              class="font-mono font-semibold m-0 text-clip text-transparent bg-clip-text bg-gradient-to-r from-secondary to-primary"
+              >Soundvertise</a
+            ></code
+          > admin companion.
+        </h1>
+
+        <section id="links" class="flex flex-wrap md:flex-nowrap gap-4">
+          <a class="btn btn-primary" href="/download">Blast Off</a>
+
+          <button
+            id="logout-button"
+            class:list={["btn btn-ghost", { hidden: !isLoggedIn }]}
+          >
+            Log out
+          </button>
+
+          <button
+            id="login-button"
+            class:list={["btn btn-ghost", { hidden: isLoggedIn }]}
+          >
+            Log in
+          </button>
+        </section>
+      </section>
+    </main>
+
+    <VersionNews />
+  </div>
+
+  <script>
+    const { signIn, signOut } = await import("auth-astro/client");
+    document.querySelector("#login-button").onclick = () => signIn("github");
+    document.querySelector("#logout-button").onclick = () => signOut();
+  </script>
 </Layout>
