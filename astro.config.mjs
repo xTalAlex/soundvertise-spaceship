@@ -15,5 +15,7 @@ export default defineConfig({
 
   integrations: [auth()],
 
-  adapter: netlify(),
+  adapter: netlify({
+    cacheOnDemandPages: true,
+  }),
 });

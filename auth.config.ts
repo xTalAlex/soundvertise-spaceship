@@ -23,15 +23,5 @@ export default defineConfig({
 
       return isAllowed;
     },
-    async session({ session, token }) {
-      if (!session.spotifyAccessToken && session.user) {
-        try {
-          session.spotifyAccessToken = await Spotify.authorizeApp();
-        } catch (error) {
-          console.error("Could not generate Spotify access token: ", error);
-        }
-      }
-      return session;
-    },
   },
 });
