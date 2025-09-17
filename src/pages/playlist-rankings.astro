@@ -1,0 +1,249 @@
+---
+import { getSession } from "auth-astro/server";
+import Spotify from "@lib/spotify.js";
+
+import Layout from "@layouts/Layout.astro";
+import Magnifier from "@icons/Magnifier.astro";
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+
+let spotifyAccessToken = null;
+
+if (!session?.user) {
+  return Astro.redirect("/");
+} else {
+  const spotifySessionData = await Astro.session?.get("spotify");
+  spotifyAccessToken = spotifySessionData?.accessToken;
+
+  if (
+    !spotifySessionData?.accessToken ||
+    spotifySessionData?.expiresAt < Date.now()
+  ) {
+    spotifyAccessToken = await Spotify.authorizeApp();
+    await Astro.session?.set("spotify", {
+      accessToken: spotifyAccessToken,
+      expiresAt: Date.now() + 3600 * 1000,
+    });
+  }
+}
+---
+
+<Layout>
+  <div id="container" class="min-h-screen max-w-5xl mx-auto">
+    <main class="">
+      <section id="hero" class="py-12">
+        <h1 class="my-4 text-xl leading-6 text-center">Playlist Rankings</h1>
+      </section>
+
+      <form onsubmit="event.preventDefault(); searchPlaylists(event);">
+        <fieldset
+          class="fieldset bg-base-200 border-base-300 rounded-box mx-auto w-xs border p-4"
+        >
+          <label class="input">
+            <Magnifier className="h-[1em] opacity-50" />
+            <input
+              type="search"
+              class="grow"
+              name="keywords"
+              placeholder="Keywords (comma separated)"
+            />
+          </label>
+
+          <div class="">
+            {
+              Object.entries(Spotify.MARKETS).map(([market, value]) => (
+                <input
+                  class="m-0.5 btn btn-sm checked:btn-secondary"
+                  type="checkbox"
+                  name="markets"
+                  aria-label={market}
+                  title={market}
+                  value={value}
+                />
+              ))
+            }
+          </div>
+
+          <input type="hidden" name="access_token" value={spotifyAccessToken} />
+
+          <button
+            type="submit"
+            id="submit-btn"
+            class="btn btn-primary mt-4"
+            disabled>Search</button
+          >
+        </fieldset>
+      </form>
+
+      <section
+        id="progress"
+        class="mt-6 p-4 text-center"
+        style="display: none;"
+      >
+        <div class="mb-4 text-sm opacity-70">
+          <span>Searching for:</span>
+          <span id="current-keyword" class="font-medium">-</span>
+          <span class="mx-2">|</span>
+          <span id="current-market" class="font-medium">-</span>
+        </div>
+        <span class="loading loading-bars loading-sm text-primary"></span>
+      </section>
+
+      <section
+        id="download-section"
+        class="mt-6 p-4 text-center"
+        style="display: none;"
+      >
+        <div class="mb-4">
+          <button onclick="downloadCSV()" class="btn btn-success">
+            Download CSV
+          </button>
+        </div>
+      </section>
+
+      <section class="w-full mx-auto my-12">
+        <div
+          id="results"
+          class="max-h-screen overflow-y-auto p-4 rounded-box shadow bg-neutral text-neutral-content"
+          style="display: none;"
+        >
+          <table
+            id="results-table"
+            class="my-6 table table-xs table-zebra w-full"
+          >
+            <thead>
+              <tr>
+                <th>Keyword</th>
+                <th>Market</th>
+                <th>Position</th>
+                <th>Playlist Spotify ID</th>
+                <th>Playlist Name</th>
+                <th>Owner Spotify ID</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"> </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    import Spotify from "@lib/spotify.js";
+    import { downloadCSV, appendContent } from "@lib/playlistsRankings.js";
+
+    window.downloadCSV = downloadCSV;
+
+    function validateForm() {
+      const keywordsInput = document.querySelector('input[name="keywords"]');
+      const marketCheckboxes = document.querySelectorAll(
+        'input[name="markets"]:checked'
+      );
+      const submitBtn = document.getElementById("submit-btn");
+
+      const hasKeywords = keywordsInput.value.trim().length > 0;
+      const hasMarkets = marketCheckboxes.length > 0;
+
+      submitBtn.disabled = !(hasKeywords && hasMarkets);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const keywordsInput = document.querySelector('input[name="keywords"]');
+      const marketCheckboxes = document.querySelectorAll(
+        'input[name="markets"]'
+      );
+
+      validateForm();
+
+      keywordsInput.addEventListener("input", validateForm);
+
+      marketCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener("change", validateForm);
+      });
+    });
+
+    window.searchPlaylists = async (event) => {
+      const formData = new FormData(event.target);
+
+      const keywordsList = formData.get("keywords");
+      const keywords = keywordsList
+        .split(",")
+        .map((kw) => kw.trim())
+        .filter((kw) => kw.length);
+
+      const accessToken = formData.get("access_token");
+      const selectedMarkets = formData.getAll("markets");
+
+      if (
+        accessToken?.trim().length &&
+        keywords?.length &&
+        selectedMarkets.length
+      ) {
+        const progressSection = document.getElementById("progress");
+        const currentKeyword = document.getElementById("current-keyword");
+        const currentMarket = document.getElementById("current-market");
+        const resultsTable = document.getElementById("results");
+        const resultsTbody = document.getElementById("results-tbody");
+        const downloadSection = document.getElementById("download-section");
+
+        progressSection.style.display = "block";
+        downloadSection.style.display = "none";
+        resultsTable.style.display = "none";
+        resultsTbody.innerHTML = "";
+
+        let delayCounter = 0;
+
+        for (const keyword of keywords) {
+          for (const market of selectedMarkets) {
+            // Aggiorna lo stato di avanzamento
+            currentKeyword.textContent = keyword;
+            currentMarket.textContent = market;
+
+            if (delayCounter > 0) {
+              await new Promise((resolve) =>
+                setTimeout(resolve, delayCounter * 2000)
+              );
+            }
+
+            const playlists = await Spotify.searchPlaylists(
+              accessToken,
+              keyword,
+              market
+            );
+
+            playlists.forEach((playlist, position) => {
+              if (playlist) {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${keyword}</td>
+                  <td>${market}</td>
+                  <td>${position + 1}</td>
+                  <td>${playlist.id}</td>
+                  <td>${playlist.name}</td>
+                  <td>${playlist.owner?.id || ""}</td>
+                `;
+                resultsTbody.appendChild(row);
+                resultsTable.style.display = "table";
+              }
+            });
+
+            appendContent(playlists, keyword, market);
+
+            delayCounter++;
+          }
+        }
+
+        progressSection.style.display = "none";
+        downloadSection.style.display = "block";
+      } else {
+        if (!accessToken?.trim().length) {
+          alert("Invalid access token");
+        } else {
+          alert("Please provide keywords and select at least one market.");
+        }
+      }
+    };
+  </script>
+</Layout>
