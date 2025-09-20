@@ -193,19 +193,13 @@ if (!session?.user) {
         resultsTable.style.display = "none";
         resultsTbody.innerHTML = "";
 
-        let delayCounter = 0;
-
         for (const keyword of keywords) {
           for (const market of selectedMarkets) {
             // Aggiorna lo stato di avanzamento
             currentKeyword.textContent = keyword;
             currentMarket.textContent = market;
 
-            if (delayCounter > 0) {
-              await new Promise((resolve) =>
-                setTimeout(resolve, delayCounter * 2000)
-              );
-            }
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             const playlists = await Spotify.searchPlaylists(
               accessToken,
@@ -230,8 +224,6 @@ if (!session?.user) {
             });
 
             appendContent(playlists, keyword, market);
-
-            delayCounter++;
           }
         }
 
