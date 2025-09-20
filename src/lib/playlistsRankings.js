@@ -41,7 +41,7 @@ export function downloadCSV(name = "playlists_rankings") {
         row.market,
         row.position,
         row.playlistSpotifyId,
-        row.playlistName,
+        escapeCSVField(row.playlistName),
         row.ownerSpotifyId,
       ].join(",")
     ),
@@ -56,4 +56,16 @@ export function downloadCSV(name = "playlists_rankings") {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function escapeCSVField(field) {
+  const stringField = String(field || "");
+  if (
+    stringField.includes(",") ||
+    stringField.includes('"') ||
+    stringField.includes("\n")
+  ) {
+    return `"${stringField.replace(/"/g, '""')}"`;
+  }
+  return stringField;
 }

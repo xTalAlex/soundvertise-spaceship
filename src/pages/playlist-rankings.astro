@@ -83,12 +83,28 @@ if (!session?.user) {
         style="display: none;"
       >
         <div class="mb-4 text-sm opacity-70">
+          <span>Progress:</span>
+          <span id="progress-counter" class="font-medium">0/0</span>
+          <span class="mx-2">searches</span>
+        </div>
+        <div class="mb-4">
+          <div
+            id="progress-radial"
+            class="radial-progress bg-neutral text-neutral-content"
+            style="--value:0;"
+            aria-valuenow="0"
+            role="progressbar"
+          >
+            0%
+          </div>
+        </div>
+        <div class="mb-4 text-sm opacity-70">
           <span>Searching for:</span>
           <span id="current-keyword" class="font-medium">-</span>
           <span class="mx-2">|</span>
           <span id="current-market" class="font-medium">-</span>
         </div>
-        <span class="loading loading-bars loading-sm text-primary"></span>
+        <span class="loading loading-bars loading-sm text-secondary"></span>
       </section>
 
       <section
@@ -184,16 +200,24 @@ if (!session?.user) {
         const progressSection = document.getElementById("progress");
         const currentKeyword = document.getElementById("current-keyword");
         const currentMarket = document.getElementById("current-market");
+        const progressCounter = document.getElementById("progress-counter");
+        const progressRadial = document.getElementById("progress-radial");
         const resultsTable = document.getElementById("results");
         const resultsTbody = document.getElementById("results-tbody");
         const downloadSection = document.getElementById("download-section");
+
+        const totalSearches = keywords.length * selectedMarkets.length;
+        let processedSearches = 0;
 
         progressSection.style.display = "block";
         downloadSection.style.display = "none";
         resultsTable.style.display = "none";
         resultsTbody.innerHTML = "";
 
-        let delayCounter = 0;
+        progressCounter.textContent = `${processedSearches}/${totalSearches}`;
+        progressRadial.style.setProperty("--value", "0");
+        progressRadial.setAttribute("aria-valuenow", "0");
+        progressRadial.textContent = "0%";
 
         for (const keyword of keywords) {
           for (const market of selectedMarkets) {
@@ -201,11 +225,7 @@ if (!session?.user) {
             currentKeyword.textContent = keyword;
             currentMarket.textContent = market;
 
-            if (delayCounter > 0) {
-              await new Promise((resolve) =>
-                setTimeout(resolve, delayCounter * 2000)
-              );
-            }
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             const playlists = await Spotify.searchPlaylists(
               accessToken,
@@ -213,10 +233,11 @@ if (!session?.user) {
               market
             );
 
-            playlists.forEach((playlist, position) => {
-              if (playlist) {
-                const row = document.createElement("tr");
-                row.innerHTML = `
+            if (playlists) {
+              playlists.forEach((playlist, position) => {
+                if (playlist) {
+                  const row = document.createElement("tr");
+                  row.innerHTML = `
                   <td>${keyword}</td>
                   <td>${market}</td>
                   <td>${position + 1}</td>
@@ -224,14 +245,32 @@ if (!session?.user) {
                   <td>${playlist.name}</td>
                   <td>${playlist.owner?.id || ""}</td>
                 `;
-                resultsTbody.appendChild(row);
-                resultsTable.style.display = "block";
-              }
-            });
+                  resultsTbody.appendChild(row);
+                  resultsTable.style.display = "block";
+                }
+              });
 
-            appendContent(playlists, keyword, market);
+              appendContent(playlists, keyword, market);
+            } else {
+              console.error(
+                `Error fetching playlists for keyword "${keyword}" in market "${market}"`
+              );
+            }
 
-            delayCounter++;
+            processedSearches++;
+            const progressPercentage = Math.round(
+              (processedSearches / totalSearches) * 100
+            );
+            progressCounter.textContent = `${processedSearches}/${totalSearches}`;
+            progressRadial.style.setProperty(
+              "--value",
+              progressPercentage.toString()
+            );
+            progressRadial.setAttribute(
+              "aria-valuenow",
+              progressPercentage.toString()
+            );
+            progressRadial.textContent = `${progressPercentage}%`;
           }
         }
 
